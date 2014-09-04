@@ -62,7 +62,7 @@ class Loader extends PluginBase{
         @mkdir($this->getDataFolder());
         $this->checkConfig();
         //$this->enableDataBases();
-	    $this->getLogger()->info(TextFormat::YELLOW . "Loading...");
+	$this->getLogger()->info(TextFormat::YELLOW . "Loading...");
         $this->getServer()->getPluginManager()->registerEvents(new EventHandler($this), $this);
         $this->registerCommands();
 
@@ -157,10 +157,10 @@ class Loader extends PluginBase{
 
     public function enableDataBases(){
         if(!file_exists($this->getDataFolder() . "warps.db")){
-            $this->sqlite = new \SQLite3($this->getDataFolder() . "warps.db", SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
-            $this->sqlite->exec(stream_get_contents($this->getResource("warps.sql")));
+            $this->sqlite = new \SQLite3($this->getDataFolder() . "Database.db", SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
+            $this->sqlite->exec(stream_get_contents($this->getResource("Database.sql")));
         }else{
-            $this->sqlite = new \SQLite3($this->getDataFolder() . "warps.db", SQLITE3_OPEN_READWRITE);
+            $this->sqlite = new \SQLite3($this->getDataFolder() . "Database.db", SQLITE3_OPEN_READWRITE);
         }
     }
 
@@ -1189,7 +1189,7 @@ class Loader extends PluginBase{
      * @param string $name
      */
     public function removeWarp($name){
-        $prepare = $this->sqlite->prepare("DELETE FROM players WHERE name = :name");
+        $prepare = $this->sqlite->prepare("DELETE FROM warps WHERE name = :name");
         $prepare->bindValue(":name", $name);
         $prepare->execute();
     }
@@ -1201,7 +1201,7 @@ class Loader extends PluginBase{
      * @return array|bool
      */
     public function getWarp($name){
-        $prepare = $this->sqlite->prepare("SELECT * FROM players WHERE name = :name");
+        $prepare = $this->sqlite->prepare("SELECT * FROM warps WHERE name = :name");
         $prepare->bindValue(":name", $name);
         $result = $prepare->execute();
 
