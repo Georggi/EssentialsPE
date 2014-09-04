@@ -742,7 +742,7 @@ class Loader extends PluginBase{
         $player->setNameTag($event->getNameTag());
         $player->setDisplayName($nick);
         if($event->doSave()){
-            $this->sqlite->exec("INSERT OR REPLACE INTO nicks (iname, nick) VALUES (
+            $this->sqlite->exec("INSERT OR REPLACE INTO nicks (name, nick) VALUES (
                     '{$this->sqlite->escapeString($player->getName())}',
                     '{$this->sqlite->escapeString($nick)}'
                     );");
