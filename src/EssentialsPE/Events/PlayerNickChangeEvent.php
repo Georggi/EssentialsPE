@@ -12,25 +12,33 @@ class PlayerNickChangeEvent extends PluginEvent implements Cancellable{
 
     /** @var Player  */
     protected $player;
-    /** @var  string */
+    /** @var string */
     protected   $new_nick;
-    /** @var  string */
+    /** @var string */
     protected   $old_nick;
     /** @var bool|mixed  */
     protected $nametag;
+    /** @var bool */
+    protected $save;
 
     /**
      * @param Loader $plugin
      * @param Player $player
      * @param string $new_nick
      * @param mixed $nametag
+     * @param bool $save
      */
-    public function __construct(Loader $plugin, Player $player, $new_nick, $nametag = false){
+    public function __construct(Loader $plugin, Player $player, $new_nick, $nametag = false, $save = true){
         parent::__construct($plugin);
         $this->player = $player;
         $this->new_nick = $new_nick;
         $this->old_nick = $player->getDisplayName();
-        if($nametag === false){ $this->nametag = $new_nick; }else{ $this->nametag = $nametag; }
+        $this->save = $save;
+        if($nametag === false){
+            $this->nametag = $new_nick;
+        }else{
+            $this->nametag = $nametag;
+        }
     }
 
     /**
@@ -86,5 +94,17 @@ class PlayerNickChangeEvent extends PluginEvent implements Cancellable{
      */
     public function setNameTag($nametag){
         $this->nametag = $nametag;
+    }
+
+    /**
+     * Checks if the nick change is going to be saved
+     * @return bool whether the nick change is to be saved
+     */
+    public function doSave(){
+        return $this->save;
+    }
+
+    public function setSave($save = true){
+        $this->save = $save;
     }
 }

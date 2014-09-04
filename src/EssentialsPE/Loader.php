@@ -55,8 +55,8 @@ use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
 
 class Loader extends PluginBase{
-    /** @var  \SQLite3 */
-    public $warps;
+    /** @var \SQLite3 */
+    public $sqlite;
 
     public function onEnable(){
         @mkdir($this->getDataFolder());
@@ -157,10 +157,10 @@ class Loader extends PluginBase{
 
     public function enableDataBases(){
         if(!file_exists($this->getDataFolder() . "warps.db")){
-            $this->warps = new \SQLite3($this->getDataFolder() . "warps.db", SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
-            $this->warps->exec(stream_get_contents($this->getResource("warps.sql")));
+            $this->sqlite = new \SQLite3($this->getDataFolder() . "warps.db", SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
+            $this->sqlite->exec(stream_get_contents($this->getResource("warps.sql")));
         }else{
-            $this->warps = new \SQLite3($this->getDataFolder() . "warps.db", SQLITE3_OPEN_READWRITE);
+            $this->sqlite = new \SQLite3($this->getDataFolder() . "warps.db", SQLITE3_OPEN_READWRITE);
         }
     }
 
@@ -734,17 +734,18 @@ class Loader extends PluginBase{
      * @return bool
      */
     public function setNick(Player $player, $nick, $save = true){
-        $this->getServer()->getPluginManager()->callEvent($event = new PlayerNickChangeEvent($this, $player, $nick));
+        $this->getServer()->getPluginManager()->callEvent($event = new PlayerNickChangeEvent($this, $player, $nick, $save));
         if($event->isCancelled()){
             return false;
         }
-        $config = new Config($this->getDataFolder() . "Nicks.yml", Config::YAML);
         $nick = $event->getNewNick();
         $player->setNameTag($event->getNameTag());
         $player->setDisplayName($nick);
-        if($save == true){
-            $config->set($player->getName(), $nick);
-            $config->save();
+        if($event->doSave()){
+            $this->sqlite->exec("INSERT OR REPLACE INTO nicks (iname, nick) VALUES (
+                    '{$this->sqlite->escapeString($player->getName())}',
+                    '{$this->sqlite->escapeString($nick)}'
+                    );");
         }
         return true;
     }
@@ -1166,14 +1167,14 @@ class Loader extends PluginBase{
      */
     public function setWarp(Player $player, $name){
         if(!$this->warpExist($name)){
-            $prepare = $this->warps->prepare("INSERT INTO warps (name, x, y, z) VALUES (:name, :x, :y, :z)");
+            $prepare = $this->sqlite->prepare("INSERT INTO warps (name, x, y, z) VALUES (:name, :x, :y, :z)");
             $prepare->bindValue(":name", $name, SQLITE3_TEXT);
             $prepare->bindValue(":x", $player->getX(), SQLITE3_INTEGER);
             $prepare->bindValue(":y", $player->getY(), SQLITE3_INTEGER);
             $prepare->bindValue(":z", $player->getZ(), SQLITE3_INTEGER);
             $prepare->execute();
         }elseif($player->hasPermission("essentials.warps")){
-            $prepare = $this->warps->prepare("UPDATE warps SET x = :x, y = :y, z = :z WHERE name = :name");
+            $prepare = $this->sqlite->prepare("UPDATE warps SET x = :x, y = :y, z = :z WHERE name = :name");
             $prepare->bindValue(":name", $name);
             $prepare->bindValue(":x", $player->getX());
             $prepare->bindValue(":y", $player->getY());
@@ -1188,7 +1189,7 @@ class Loader extends PluginBase{
      * @param string $name
      */
     public function removeWarp($name){
-        $prepare = $this->warps->prepare("DELETE FROM players WHERE name = :name");
+        $prepare = $this->sqlite->prepare("DELETE FROM players WHERE name = :name");
         $prepare->bindValue(":name", $name);
         $prepare->execute();
     }
@@ -1200,7 +1201,7 @@ class Loader extends PluginBase{
      * @return array|bool
      */
     public function getWarp($name){
-        $prepare = $this->warps->prepare("SELECT * FROM players WHERE name = :name");
+        $prepare = $this->sqlite->prepare("SELECT * FROM players WHERE name = :name");
         $prepare->bindValue(":name", $name);
         $result = $prepare->execute();
 
@@ -1249,7 +1250,7 @@ class Loader extends PluginBase{
      * @return array|bool
      */
     public function warpList(){
-        $prepare = $this->warps->prepare("SELECT * FROM warps");
+        $prepare = $this->sqlite->prepare("SELECT * FROM warps");
         $result = $prepare->execute();
 
         if($result instanceof \SQLite3Result){

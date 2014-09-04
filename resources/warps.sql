@@ -1,6 +1,10 @@
 CREATE TABLE warps (
   name TEXT PRIMARY KEY,
-  x INTEGER,
-  y INTEGER,
-  z INTEGER
+  x REAL ,
+  y REAL,
+  z REAL
+);
+CREATE TABLE nicks (
+  iname TEXT PRIMARY KEY COLLATE NOCASE,
+  nick TEXT
 );
